@@ -3,21 +3,24 @@ package com.mygdx.game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.Pixmap;
-import com.mygdx.interfaces.DrawEntity;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.mygdx.interfaces.CollisionWithMap;
+import com.mygdx.interfaces.DrawShape;
 import com.mygdx.interfaces.UpdateEntity;
 
-public class Player implements UpdateEntity, DrawEntity{
+public class Player implements UpdateEntity, DrawShape, CollisionWithMap{
 	private Point2D position;
 	private float angleVision;
 	
-	
-	private static final float SPEED_MOVING = 200;
-	private static final float SPEED_ROTATING = 200;
+	private RayCastedScreen rayCastedScreen;
+
+	private static final float SPEED_MOVING = 110;
+	private static final float SPEED_ROTATING = 120;
 	
 	public Player(Point2D position) {
 		this.position = position;
 		this.angleVision = 0;
+		this.rayCastedScreen = new RayCastedScreen(70, position, angleVision);
 	}
 	
 	public final Point2D getPosition() {
@@ -32,7 +35,7 @@ public class Player implements UpdateEntity, DrawEntity{
 	@Override
 	public void update(float dt) {
 		if(Gdx.input.isKeyPressed(Keys.A)) {
-			angleVision -= SPEED_ROTATING*dt;
+			angleVision += SPEED_ROTATING*dt;
 			angleVision %= 360;
 		}
 		if(Gdx.input.isKeyPressed(Keys.S)) {
@@ -48,7 +51,7 @@ public class Player implements UpdateEntity, DrawEntity{
 			position.y = (float)newY;
 		}
 		if(Gdx.input.isKeyPressed(Keys.D)) {
-			angleVision += SPEED_ROTATING*dt;
+			angleVision -= SPEED_ROTATING*dt;
 			angleVision %= 360;
 		}
 		if(Gdx.input.isKeyPressed(Keys.W)) {
@@ -62,9 +65,12 @@ public class Player implements UpdateEntity, DrawEntity{
 			position.x = (float)newX;
 			position.y = (float)newY;
 		}
+
+		// update rays
+		this.rayCastedScreen.updatePosition(position, (angleVision-35) % 360);
 	}
 	
-	private Point2D getPositionNormLookingAt(float angle) {
+	public Point2D getPositionNormLookingAt(float angle) {
 		double rad = angle * (Math.PI / 180.0);
 		double x = Math.cos(rad);
 		double y = Math.sin(rad);
@@ -72,19 +78,18 @@ public class Player implements UpdateEntity, DrawEntity{
 	}
 	
 	@Override
-	public void draw(Pixmap pixmap) {
+	public void draw(ShapeRenderer shapeRenderer) {
 		// Player
-		pixmap.setColor(Color.BLACK);
-		pixmap.drawCircle((int)position.x, (int)position.y, 20);
-		pixmap.setColor(Color.WHITE);
-		pixmap.drawPixel((int)position.x, (int)position.y);
-		
-		// line of vision
-		Point2D lookAt = getPositionNormLookingAt(angleVision);
-		lookAt.x *= 50;
-		lookAt.y *= 50;
-		lookAt.x += position.x;
-		lookAt.y += position.y;
-		pixmap.drawLine((int)position.x, (int)position.y, (int)lookAt.x, (int)lookAt.y);
+		shapeRenderer.setColor(Color.BLACK);
+		shapeRenderer.circle((int)position.x, (int)position.y, 20);
+		shapeRenderer.setColor(Color.WHITE);
+		shapeRenderer.rect((int)position.x, (int)position.y, 1, 1);
+
+		this.rayCastedScreen.draw(shapeRenderer);
+	}
+
+	@Override
+	public void collisionMap(TileMap tileMap) {
+		this.rayCastedScreen.updateCollision(tileMap);
 	}
 }

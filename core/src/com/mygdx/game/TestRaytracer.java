@@ -2,64 +2,63 @@ package com.mygdx.game;
 
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.Pixmap;
-import com.badlogic.gdx.graphics.Pixmap.Format;
-import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
 
 public class TestRaytracer extends ApplicationAdapter {
 	// Draw
-	Pixmap pixmapBuffer;
-	Texture frameBufferTex ;
 	SpriteBatch spriteBatch;
-	
+	ShapeRenderer shapeRenderer;
+	OrthographicCamera orthoCamera;
+
 	// Game
 	Player player;
+	TileMap tileMap;
 	
 	@Override
 	public void create () {
-		pixmapBuffer = new Pixmap(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), Format.RGBA8888);
 		spriteBatch = new SpriteBatch();
-		frameBufferTex = new Texture(pixmapBuffer);
+		shapeRenderer = new ShapeRenderer();
+		orthoCamera = new OrthographicCamera(360, 240);
+		orthoCamera.translate(360/2, 240/2);
+		orthoCamera.update();
 		
 		// Game 
-		player = new Player(new Point2D(20, 20));
+		player = new Player(new Point2D(70, 70));
+		tileMap = new TileMap(18, 12);
 	}
 
 	@Override
 	public void render () {
 		// Update
 		player.update(Gdx.graphics.getDeltaTime());
-		
+		player.collisionMap(tileMap);
 		
 		// Draw
-		// Clear framebuffer (pixmap)
-		pixmapBuffer.setColor(Color.PINK);
-		pixmapBuffer.fill();
+		// Clear framebuffer
+		Gdx.gl.glClearColor(0.8f, 0.6f, 0.5f, 0);
+		Gdx.gl.glClear(Gdx.gl.GL_COLOR_BUFFER_BIT);
+
+		shapeRenderer.setProjectionMatrix(orthoCamera.combined);
+		shapeRenderer.begin(ShapeType.Line);
 		
 		
-		player.draw(pixmapBuffer);
+		tileMap.draw(shapeRenderer);
+		player.draw(shapeRenderer);
 		
-		
-		// Draw pixmap to screen
-		frameBufferTex.dispose();
-		frameBufferTex = new Texture(pixmapBuffer);
-		spriteBatch.begin();
-		spriteBatch.draw(frameBufferTex, 0, 0);
-		spriteBatch.end();
+		shapeRenderer.end();
 	}
 	
 	@Override
 	public void resize(int width, int height) {
-		pixmapBuffer.dispose();
-		pixmapBuffer = new Pixmap(width, height, Format.RGBA8888);
+		
 	}
 	
 	@Override
 	public void dispose () {
 		spriteBatch.dispose();
-		pixmapBuffer.dispose();
-		frameBufferTex.dispose();
+		shapeRenderer.dispose();
 	}
 }
